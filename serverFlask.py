@@ -57,6 +57,7 @@ class Post(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     author = relationship('User', back_populates='posts')
+    views = Column(Integer, nullable=False)
 
     def __repr__(self):
         return f"<Post(id={self.id}, title={self.title}, user_id={self.user_id})>"
@@ -156,14 +157,15 @@ def get_single_post(post_id):
     post = session.query(Post).filter_by(id=post_id).first()
     if not post:
         return jsonify({"error": "Post not found."}), 404
+    post.views += 1
     return jsonify({
         "id": post.id,
         "title": post.title,
         "content": post.content,
         "created_at": post.created_at.isoformat(),
-        "user_id": post.author.username
+        "user_id": post.author.username,
+        "views": post.views
     }), 200
-
 
 # 7. Создание нового поста
 @app.route('/posts', methods=['POST'])
@@ -179,7 +181,7 @@ def create_post():
     if not user:
         return jsonify({"error": "User not found."}), 404
 
-    new_post = Post(title=data['title'], content=data['content'], author=user)
+    new_post = Post(title=data['title'], content=data['content'], author=user, views=0)
     session.add(new_post)
     session.commit()
 
@@ -191,6 +193,7 @@ def create_post():
         "created_at": new_post.created_at.isoformat(),
         "user_id": new_post.user_id
     }), 201
+
 
 # 8. Изменение поста
 @app.route('/posts/<int:post_id>', methods=['PUT'])
@@ -214,8 +217,6 @@ def update_post(post_id):
 
     session.commit()
     return jsonify({"message": "Post updated successfully."}), 200
-
-
 
 # 9. Удаление поста
 @app.route('/posts/<int:post_id>', methods=['DELETE'])
