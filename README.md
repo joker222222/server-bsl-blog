@@ -26,20 +26,20 @@ http://<your_host>:5000
 - **201 Created**
   ```json
   {
-    "message": "Пользователь успешно создан.",
+    "message": "User created successfully.",
     "user_id": "integer"
   }
   ```
 - **400 Bad Request**
   ```json
   {
-    "error": "Имя пользователя и пароль обязательны."
+    "error": "Username and password are required."
   }
   ```
 - **409 Conflict**
   ```json
   {
-    "error": "Пользователь уже существует."
+    "error": "User already exists."
   }
   ```
 
@@ -61,20 +61,20 @@ http://<your_host>:5000
 - **200 OK**
   ```json
   {
-    "message": "Вход выполнен успешно.",
+    "message": "Login successful.",
     "token": "string"
   }
   ```
 - **400 Bad Request**
   ```json
   {
-    "error": "Имя пользователя и пароль обязательны."
+    "error": "Username and password are required."
   }
   ```
 - **401 Unauthorized**
   ```json
   {
-    "error": "Неверные учетные данные."
+    "error": "Invalid credentials."
   }
   ```
 
@@ -87,7 +87,7 @@ http://<your_host>:5000
 - **200 OK**
   ```json
   {
-    "message": "Выход выполнен успешно."
+    "message": "Logged out successfully."
   }
   ```
 
@@ -106,37 +106,31 @@ Authorization: <JWT Token>
 - **200 OK**
   ```json
   {
-    "message": "Пользователь успешно удален."
+    "message": "User deleted successfully."
   }
   ```
 - **404 Not Found**
   ```json
   {
-    "error": "Пользователь не найден."
+    "error": "User not found."
   }
   ```
 - **403 Forbidden**
   ```json
   {
-    "error": "Вы можете удалить только свою учетную запись."
+    "error": "You can only delete your own account."
   }
   ```
 - **401 Unauthorized**
   ```json
   {
-    "error": "Неверный токен."
+    "error": "Invalid token."
   }
   ```
 
 ### 5. Получить все посты
 
 **GET** `/posts`
-
-**Заголовки:**
-
-```
-Authorization: <JWT Token>
-```
 
 **Ответы:**
 
@@ -157,12 +151,6 @@ Authorization: <JWT Token>
 
 **GET** `/posts/{post_id}`
 
-**Заголовки:**
-
-```
-Authorization: <JWT Token>
-```
-
 **Ответы:**
 
 - **200 OK**
@@ -172,13 +160,14 @@ Authorization: <JWT Token>
     "title": "string",
     "content": "string",
     "created_at": "ISO 8601 datetime",
-    "user_id": "integer"
+    "user_id": "integer",
+    "views": "integer"
   }
   ```
 - **404 Not Found**
   ```json
   {
-    "error": "Пост не найден."
+    "error": "Post not found."
   }
   ```
 
@@ -196,8 +185,8 @@ Authorization: <JWT Token>
 
 ```json
 {
-  "title": "string (max: 255 символов)",
-  "content": "string (max: 5000 символов)"
+  "title": "string (max: 255 characters)",
+  "content": "string (max: 5000 characters)"
 }
 ```
 
@@ -206,7 +195,7 @@ Authorization: <JWT Token>
 - **201 Created**
   ```json
   {
-    "message": "Пост успешно создан.",
+    "message": "Post created successfully.",
     "post_id": "integer",
     "title": "string",
     "content": "string",
@@ -217,7 +206,7 @@ Authorization: <JWT Token>
 - **400 Bad Request**
   ```json
   {
-    "error": "Заголовок и контент обязательны и должны соответствовать ограничениям по количеству символов."
+    "error": "Title and content are required, and must adhere to character limits."
   }
   ```
 
@@ -235,8 +224,8 @@ Authorization: <JWT Token>
 
 ```json
 {
-  "title": "string (необязательно)",
-  "content": "string (необязательно)"
+  "title": "string (optional)",
+  "content": "string (optional)"
 }
 ```
 
@@ -245,19 +234,19 @@ Authorization: <JWT Token>
 - **200 OK**
   ```json
   {
-    "message": "Пост успешно обновлен."
+    "message": "Post updated successfully."
   }
   ```
 - **404 Not Found**
   ```json
   {
-    "error": "Пост не найден."
+    "error": "Post not found."
   }
   ```
 - **403 Forbidden**
   ```json
   {
-    "error": "Вы можете редактировать только свои посты."
+    "error": "You can only edit your own posts."
   }
   ```
 
@@ -276,19 +265,19 @@ Authorization: <JWT Token>
 - **200 OK**
   ```json
   {
-    "message": "Пост успешно удален."
+    "message": "Post deleted successfully."
   }
   ```
 - **404 Not Found**
   ```json
   {
-    "error": "Пост не найден."
+    "error": "Post not found."
   }
   ```
 - **403 Forbidden**
   ```json
   {
-    "error": "Вы можете удалять только свои посты."
+    "error": "You can only delete your own posts."
   }
   ```
 
