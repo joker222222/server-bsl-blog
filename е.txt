@@ -1,0 +1,329 @@
+### API Documentation for Blog Platform
+
+#### Base URL
+
+```
+http://<your_host>:8080
+```
+
+### Endpoints
+
+---
+
+#### 1. Create User
+
+**POST** `/users`
+
+**Request Body:**
+
+```json
+{
+  "username": "string",
+  "password": "string"
+}
+```
+
+**Responses:**
+
+- **201 Created**
+  ```json
+  {
+  {
+    "message": "User created successfully.",
+    "user_id": "integer"
+  }
+  }
+  ```
+- **400 Bad Request**
+  ```json
+  {
+    "error": "Username and password are required."
+  }
+  ```
+- **409 Conflict**
+  ```json
+  {
+    "error": "User already exists."
+  }
+  ```
+
+---
+
+#### 2. User Login
+
+**POST** `/login`
+
+**Request Body:**
+
+```json
+{
+  "username": "string",
+  "password": "string"
+}
+```
+
+**Responses:**
+
+- **200 OK**
+  ```json
+  {
+    "message": "Login successful.",
+    "token": "string"
+  }
+  ```
+- **400 Bad Request**
+  ```json
+  {
+    "error": "Username and password are required."
+  }
+  ```
+- **401 Unauthorized**
+  ```json
+  {
+    "error": "Invalid credentials."
+  }
+  ```
+
+---
+
+#### 3. Logout User
+
+**POST** `/logout`
+
+**Responses:**
+
+- **200 OK**
+  ```json
+  {
+    "message": "Logged out successfully."
+  }
+  ```
+
+---
+
+#### 4. Delete User
+
+**DELETE** `/users/{username}`
+
+**Headers:**
+
+```
+Authorization: <JWT Token>
+```
+
+**Responses:**
+
+- **200 OK**
+  ```json
+  {
+    "message": "User deleted successfully."
+  }
+  ```
+- **404 Not Found**
+  ```json
+  {
+    "error": "User not found."
+  }
+  ```
+- **403 Forbidden**
+  ```json
+  {
+    "error": "You can only delete your own account."
+  }
+  ```
+- **401 Unauthorized**
+  ```json
+  {
+    "error": "Invalid token."
+  }
+  ```
+
+---
+
+#### 5. Get All Posts
+
+**GET** `/posts`
+
+**Headers:**
+
+```
+Authorization: <JWT Token>
+```
+
+**Responses:**
+
+- **200 OK**
+  ```json
+  [
+    {
+      "id": "integer",
+      "title": "string",
+      "content": "string",
+      "created_at": "ISO 8601 datetime",
+      "user_id": "integer"
+    }
+  ]
+  ```
+
+---
+
+#### 6. Get Single Post
+
+**GET** `/posts/{post_id}`
+
+**Headers:**
+
+```
+Authorization: <JWT Token>
+```
+
+**Responses:**
+
+- **200 OK**
+  ```json
+  {
+    "id": "integer",
+    "title": "string",
+    "content": "string",
+    "created_at": "ISO 8601 datetime",
+    "user_id": "integer"
+  }
+  ```
+- **404 Not Found**
+  ```json
+  {
+    "error": "Post not found."
+  }
+  ```
+
+---
+
+#### 7. Create Post
+
+**POST** `/posts`
+
+**Headers:**
+
+```
+Authorization: <JWT Token>
+```
+
+**Request Body:**
+
+```json
+{
+  "title": "string (max: 255 characters)",
+  "content": "string (max: 5000 characters)"
+}
+```
+
+**Responses:**
+
+- **201 Created**
+  ```json
+  {
+    "message": "Post created successfully.",
+    "post_id": "integer",
+    "title": "string",
+    "content": "string",
+    "created_at": "ISO 8601 datetime",
+    "user_id": "integer"
+  }
+  ```
+- **400 Bad Request**
+  ```json
+  {
+    "error": "Title and content are required, and must adhere to character limits."
+  }
+  ```
+
+---
+
+#### 8. Update Post
+
+**PUT** `/posts/{post_id}`
+
+**Headers:**
+
+```
+Authorization: <JWT Token>
+```
+
+**Request Body:**
+
+```json
+{
+  "title": "string (optional)",
+  "content": "string (optional)"
+}
+```
+
+**Responses:**
+
+- **200 OK**
+  ```json
+  {
+    "message": "Post updated successfully."
+  }
+  ```
+- **404 Not Found**
+  ```json
+  {
+    "error": "Post not found."
+  }
+  ```
+- **403 Forbidden**
+  ```json
+  {
+    "error": "You can only edit your own posts."
+  }
+  ```
+
+---
+
+#### 9. Delete Post
+
+**DELETE** `/posts/{post_id}`
+
+**Headers:**
+
+```
+Authorization: <JWT Token>
+```
+
+**Responses:**
+
+- **200 OK**
+  ```json
+  {
+    "message": "Post deleted successfully."
+  }
+  ```
+- **404 Not Found**
+  ```json
+  {
+    "error": "Post not found."
+  }
+  ```
+- **403 Forbidden**
+  ```json
+  {
+    "error": "You can only delete your own posts."
+  }
+  ```
+
+---
+
+### Error Codes
+
+- **400 Bad Request**: Missing or invalid data in the request.
+- **401 Unauthorized**: Token is missing, invalid, or expired.
+- **403 Forbidden**: User is not authorized to perform the action.
+- **404 Not Found**: Resource not found.
+- **409 Conflict**: Resource already exists.
+
+### Notes
+
+- All endpoints requiring authentication need the `Authorization` header with a valid JWT token.
+- Dates are returned in ISO 8601 format (`YYYY-MM-DDTHH:MM:SSZ`).
+

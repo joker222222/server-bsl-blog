@@ -3,9 +3,13 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, DateTime
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from datetime import datetime
+import jwt
+from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = "zhulikiettttta"  # Для управления сессиями
+JWT_SECRET = "blog_platform_mega_super_style_shhhet"
+JWT_ALGORITHM = "HS256"
 
 # Инициализация базы данных
 DATABASE_URL = "sqlite:///blog.db"
@@ -13,6 +17,22 @@ engine = create_engine(DATABASE_URL, echo=True)
 Base = declarative_base()
 Session = sessionmaker(bind=engine)
 session = Session()
+
+# Утилита для проверки JWT
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = request.headers.get('Authorization')
+        if not token:
+            return jsonify({"error": "Token is missing."}), 401
+        try:
+            jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token has expired."}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Invalid token."}), 401
+        return f(*args, **kwargs)
+    return decorated
 
 # Определение моделей User и Post
 class User(Base):
@@ -54,7 +74,7 @@ def create_user():
     new_user = User(username=username, password=password)
     session.add(new_user)
     session.commit()
-    return jsonify({"message": "User created successfully.", "user_id": new_user.id}), 201
+    return jsonify({"message": "User created successfully."}), 201  # , "user_id": new_user.id
 
 # 2. Авторизация пользователя
 @app.route('/login', methods=['POST'])
@@ -69,8 +89,14 @@ def login():
     if not user:
         return jsonify({"error": "Invalid credentials."}), 401
     
-    flask_session['user_id'] = user.id
-    return jsonify({"message": "Login successful.", "user_id": user.id}), 200
+    # Генерация JWT токена
+    payload = {"user_id": user.id, "username": user.username}
+    token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+    # Декодирование токена для преобразования в строку (если нужно)
+    token = token.decode('utf-8') if isinstance(token, bytes) else token
+
+    return jsonify({"message": "Login successful.", "token": token}), 200
 
 # 3. Выход из аккаунта пользователя
 @app.route('/logout', methods=['POST'])
@@ -80,15 +106,14 @@ def logout():
 
 # 4. Удаление пользователя
 @app.route('/users/<string:username>', methods=['DELETE'])
+@token_required
 def delete_user(username):
-    if 'user_id' not in flask_session:
-        return jsonify({"error": "Unauthorized."}), 401
-
     user = session.query(User).filter_by(username=username).first()
     if not user:
         return jsonify({"error": "User not found."}), 404
 
-    if flask_session['user_id'] != user.id:
+    token_data = jwt.decode(request.headers.get('Authorization'), JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    if token_data['user_id'] != user.id:
         return jsonify({"error": "You can only delete your own account."}), 403
 
     session.delete(user)
@@ -97,6 +122,7 @@ def delete_user(username):
 
 # 5. Получение всех постов
 @app.route('/posts', methods=['GET'])
+@token_required
 def get_all_posts():
     posts = session.query(Post).all()
     return jsonify([
@@ -118,46 +144,21 @@ def get_single_post(post_id):
         "user_id": post.user_id
     }), 200
 
-# 7. Изменение поста
-@app.route('/posts/<int:post_id>', methods=['PUT'])
-def update_post(post_id):
-    if 'user_id' not in flask_session:
-        return jsonify({"error": "Unauthorized."}), 401
 
-    post = session.query(Post).filter_by(id=post_id).first()
-    if not post:
-        return jsonify({"error": "Post not found."}), 404
-
-    if post.user_id != flask_session['user_id']:
-        return jsonify({"error": "You can only edit your own posts."}), 403
-
-    data = request.json
-    if 'title' in data:
-        post.title = data['title']
-    if 'content' in data:
-        post.content = data['content']
-
-    session.commit()
-    return jsonify({"message": "Post updated successfully."}), 200
-
-# 8. Создание нового поста
+# 7. Создание нового поста
 @app.route('/posts', methods=['POST'])
+@token_required
 def create_post():
     data = request.json
-    if not data or 'title' not in data or 'content' not in data or 'username' not in data:
-        abort(400, description="Title, content, and username are required.")
+    if not data or 'title' not in data or 'content' not in data:
+        abort(400, description="Title and content are required.")
 
-    title = data['title']
-    content = data['content']
-    username = data['username']
-
-    # Проверка, существует ли пользователь
-    user = session.query(User).filter_by(username=username).first()
+    token_data = jwt.decode(request.headers.get('Authorization'), JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    user = session.query(User).filter_by(id=token_data['user_id']).first()
     if not user:
         return jsonify({"error": "User not found."}), 404
 
-    # Создание нового поста
-    new_post = Post(title=title, content=content, author=user)
+    new_post = Post(title=data['title'], content=data['content'], author=user)
     session.add(new_post)
     session.commit()
 
@@ -170,7 +171,53 @@ def create_post():
         "user_id": new_post.user_id
     }), 201
 
+# 8. Изменение поста
+@app.route('/posts/<int:post_id>', methods=['PUT'])
+@token_required
+def update_post(post_id):
+    token_data = jwt.decode(request.headers.get('Authorization'), JWT_SECRET, algorithms=[JWT_ALGORITHM])
+
+    post = session.query(Post).filter_by(id=post_id).first()
+    if not post:
+        return jsonify({"error": "Post not found."}), 404
+
+    if post.user_id != token_data['user_id']:
+        return jsonify({"error": "You can only edit your own posts."}), 403
+
+    data = request.json
+    if 'title' in data:
+        post.title = data['title']
+    if 'content' in data:
+        post.content = data['content']
+
+    session.commit()
+    return jsonify({"message": "Post updated successfully."}), 200
+
+
+
+# 9. Удаление поста
+@app.route('/posts/<int:post_id>', methods=['DELETE'])
+@token_required
+def delete_post(post_id):
+    # Распаковываем токен
+    token_data = jwt.decode(request.headers.get('Authorization'), JWT_SECRET, algorithms=[JWT_ALGORITHM])
+
+    # Ищем пост
+    post = session.query(Post).filter_by(id=post_id).first()
+    if not post:
+        return jsonify({"error": "Post not found."}), 404
+
+    # Проверяем, принадлежит ли пост текущему пользователю
+    if post.user_id != token_data['user_id']:
+        return jsonify({"error": "You can only delete your own posts."}), 403
+
+    # Удаляем пост
+    session.delete(post)
+    session.commit()
+
+    return jsonify({"message": "Post deleted successfully."}), 200
+
 # Запуск приложения
 if __name__ == '__main__':
     Base.metadata.create_all(engine)
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
