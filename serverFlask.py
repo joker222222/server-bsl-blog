@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, abort, session as flask_session
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, DateTime
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
-from datetime import datetime
+from datetime import datetime, timedelta
 import jwt
 from functools import wraps
 
@@ -11,6 +11,7 @@ app.secret_key = "zhulikiettttta"  # Для управления сессиям�
 JWT_SECRET = "blog_platform_mega_super_style_shhhet"
 JWT_ALGORITHM = "HS256"
 
+token_lifetime = timedelta(hours=1)
 # Инициализация базы данных
 DATABASE_URL = "sqlite:///blog.db"
 engine = create_engine(DATABASE_URL, echo=True)
@@ -88,7 +89,12 @@ def login():
     user = session.query(User).filter_by(username=username, password=password).first()
     if not user:
         return jsonify({"error": "Invalid credentials."}), 401
-    
+    # Генерация JWT токена с временем жизни
+    payload = {
+        "user_id": user.id, 
+        "username": user.username,
+        "exp": datetime.utcnow() + token_lifetime  # Устанавливаем время жизни токена
+    }
     # Генерация JWT токена
     payload = {"user_id": user.id, "username": user.username}
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
@@ -122,11 +128,14 @@ def delete_user(username):
 
 # 5. Получение всех постов
 @app.route('/posts', methods=['GET'])
-@token_required
 def get_all_posts():
     posts = session.query(Post).all()
     return jsonify([
-        {"id": post.id, "title": post.title, "content": post.content, "created_at": post.created_at.isoformat(), "user_id": post.user_id}
+        {"id": post.id, 
+        "title": post.title, 
+        "content": post.content, 
+        "created_at": post.created_at.isoformat(), 
+        "user_id": post.author.username}
         for post in posts
     ]), 200
 
@@ -141,7 +150,7 @@ def get_single_post(post_id):
         "title": post.title,
         "content": post.content,
         "created_at": post.created_at.isoformat(),
-        "user_id": post.user_id
+        "user_id": post.author.username
     }), 200
 
 
