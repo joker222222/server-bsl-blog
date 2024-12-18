@@ -10,7 +10,7 @@ from functools import wraps
 app = Flask(__name__)
 app.secret_key = "zhulikiettttta"  # Для управления сессиями
 cors = CORS(app)
-app.config('CORS_HEADERS') = 'Content-Type'
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 JWT_SECRET = "blog_platform_mega_super_style_shhhet"
 JWT_ALGORITHM = "HS256"
