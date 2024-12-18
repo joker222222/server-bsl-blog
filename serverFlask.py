@@ -252,6 +252,30 @@ def validation_token():
         return jsonify({"error": "Invalid token."}), 404
     return jsonify({"message": "Valid token", "user_id": user.username}), 200
 
+# 11. Получение данных о пользователе (все его посты)
+@app.route('/user/<string:user_id>', methods=['GET'])
+@cross_origin()
+def get_user_posts(user_id):
+
+    # Проверяем, что запрашиваемый пользователь существует
+    user = session.query(User).filter_by(id=user_id).first()
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+
+    # Получаем все посты пользователя
+    posts = session.query(Post).filter_by(user_id=user.id).all()
+
+    # Формируем ответ с постами пользователя
+    return jsonify([
+        {
+            "id": post.id,
+            "title": post.title,
+            "content": post.content,
+            "created_at": post.created_at.isoformat(),
+            "views": post.views
+        } for post in posts
+    ]), 200
+
 # Запуск приложения
 if __name__ == '__main__':
     Base.metadata.create_all(engine)
