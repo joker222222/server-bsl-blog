@@ -26,8 +26,7 @@ http://<your_host>:5000
 - **201 Created**
   ```json
   {
-    "message": "User created successfully.",
-    "user_id": "integer"
+    "message": "User created successfully."
   }
   ```
 - **400 Bad Request**
@@ -43,7 +42,7 @@ http://<your_host>:5000
   }
   ```
 
-### 2. Вход пользователя
+### 2. Авторизация пользователя
 
 **POST** `/login`
 
@@ -78,7 +77,7 @@ http://<your_host>:5000
   }
   ```
 
-### 3. Выход пользователя
+### 3. Выход из аккаунта пользователя
 
 **POST** `/logout`
 
@@ -93,13 +92,9 @@ http://<your_host>:5000
 
 ### 4. Удаление пользователя
 
-**DELETE** `/users/{username}`
+**DELETE** `/users/<string:username>`
 
-**Заголовки:**
-
-```
-Authorization: <JWT Token>
-```
+**Тело запроса:** Не требуется.
 
 **Ответы:**
 
@@ -109,26 +104,20 @@ Authorization: <JWT Token>
     "message": "User deleted successfully."
   }
   ```
-- **404 Not Found**
-  ```json
-  {
-    "error": "User not found."
-  }
-  ```
 - **403 Forbidden**
   ```json
   {
     "error": "You can only delete your own account."
   }
   ```
-- **401 Unauthorized**
+- **404 Not Found**
   ```json
   {
-    "error": "Invalid token."
+    "error": "User not found."
   }
   ```
 
-### 5. Получить все посты
+### 5. Получение всех постов
 
 **GET** `/posts`
 
@@ -141,15 +130,15 @@ Authorization: <JWT Token>
       "id": "integer",
       "title": "string",
       "content": "string",
-      "created_at": "ISO 8601 datetime",
-      "user_id": "integer"
+      "created_at": "string",
+      "user_id": "string"
     }
   ]
   ```
 
-### 6. Получить один пост
+### 6. Получение одного поста
 
-**GET** `/posts/{post_id}`
+**GET** `/posts/<int:post_id>`
 
 **Ответы:**
 
@@ -159,8 +148,8 @@ Authorization: <JWT Token>
     "id": "integer",
     "title": "string",
     "content": "string",
-    "created_at": "ISO 8601 datetime",
-    "user_id": "integer",
+    "created_at": "string",
+    "user_id": "string",
     "views": "integer"
   }
   ```
@@ -171,22 +160,16 @@ Authorization: <JWT Token>
   }
   ```
 
-### 7. Создание поста
+### 7. Создание нового поста
 
 **POST** `/posts`
-
-**Заголовки:**
-
-```
-Authorization: <JWT Token>
-```
 
 **Тело запроса:**
 
 ```json
 {
-  "title": "string (max: 255 characters)",
-  "content": "string (max: 5000 characters)"
+  "title": "string",
+  "content": "string"
 }
 ```
 
@@ -199,33 +182,27 @@ Authorization: <JWT Token>
     "post_id": "integer",
     "title": "string",
     "content": "string",
-    "created_at": "ISO 8601 datetime",
+    "created_at": "string",
     "user_id": "integer"
   }
   ```
 - **400 Bad Request**
   ```json
   {
-    "error": "Title and content are required, and must adhere to character limits."
+    "error": "Title and content are required."
   }
   ```
 
-### 8. Обновление поста
+### 8. Изменение поста
 
-**PUT** `/posts/{post_id}`
-
-**Заголовки:**
-
-```
-Authorization: <JWT Token>
-```
+**PUT** `/posts/<int:post_id>`
 
 **Тело запроса:**
 
 ```json
 {
-  "title": "string (optional)",
-  "content": "string (optional)"
+  "title": "string",
+  "content": "string"
 }
 ```
 
@@ -237,28 +214,24 @@ Authorization: <JWT Token>
     "message": "Post updated successfully."
   }
   ```
-- **404 Not Found**
-  ```json
-  {
-    "error": "Post not found."
-  }
-  ```
 - **403 Forbidden**
   ```json
   {
     "error": "You can only edit your own posts."
   }
   ```
+- **404 Not Found**
+  ```json
+  {
+    "error": "Post not found."
+  }
+  ```
 
 ### 9. Удаление поста
 
-**DELETE** `/posts/{post_id}`
+**DELETE** `/posts/<int:post_id>`
 
-**Заголовки:**
-
-```
-Authorization: <JWT Token>
-```
+**Тело запроса:** Не требуется.
 
 **Ответы:**
 
@@ -268,18 +241,45 @@ Authorization: <JWT Token>
     "message": "Post deleted successfully."
   }
   ```
-- **404 Not Found**
-  ```json
-  {
-    "error": "Post not found."
-  }
-  ```
 - **403 Forbidden**
   ```json
   {
     "error": "You can only delete your own posts."
   }
   ```
+- **404 Not Found**
+  ```json
+  {
+    "error": "Post not found."
+  }
+  ```
+
+### 10. Валидация токена
+
+**POST** `/token`
+
+**Ответы:**
+
+- **200 OK**
+  ```json
+  {
+    "message": "Valid token"
+  }
+  ```
+- **404 Not Found**
+  ```json
+  {
+    "error": "Invalid token."
+  }
+  ```
+
+## Авторизация
+
+Для работы с защищёнными эндпоинтами (создание постов, изменение и удаление постов, удаление пользователей, валидация токена), необходимо передавать токен в заголовке `Authorization`:
+
+```plaintext
+Authorization: <your_token>
+```
 
 ## Коды ошибок
 
