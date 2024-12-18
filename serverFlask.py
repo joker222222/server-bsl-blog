@@ -226,6 +226,16 @@ def delete_post(post_id):
 
     return jsonify({"message": "Post deleted successfully."}), 200
 
+# 7. Валидация токена
+@app.route('/token', methods=['POST'])
+@token_required
+def validation_token():
+    token_data = jwt.decode(request.headers.get('Authorization'), JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    user = session.query(User).filter_by(id=token_data['user_id']).first()
+    if not user:
+        return jsonify({"error": "Invalid token."}), 404
+    return jsonify({"message": "Valid token"}), 200
+
 # Запуск приложения
 if __name__ == '__main__':
     Base.metadata.create_all(engine)
