@@ -116,8 +116,11 @@ def login():
 # 3. Выход из аккаунта пользователя
 @app.route('/logout', methods=['POST'])
 @cross_origin()
+@token_required
 def logout():
-    flask_session.pop('user_id', None)
+    token_data = jwt.decode(request.headers.get('Authorization'), JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    
+    flask_session.pop(token_data['user_id'], None)
     return jsonify({"message": "Logged out successfully."}), 200
 
 # 4. Удаление пользователя
@@ -193,7 +196,6 @@ def create_post():
         "created_at": new_post.created_at.isoformat(),
         "user_id": new_post.user_id
     }), 201
-
 
 # 8. Изменение поста
 @app.route('/posts/<int:post_id>', methods=['PUT'])
