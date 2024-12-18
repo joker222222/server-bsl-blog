@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, abort, session as flask_session
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, DateTime
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import jwt
 from functools import wraps
 
@@ -11,7 +11,6 @@ app.secret_key = "zhulikiettttta"  # Для управления сессиям�
 JWT_SECRET = "blog_platform_mega_super_style_shhhet"
 JWT_ALGORITHM = "HS256"
 
-token_lifetime = timedelta(hours=1)
 # Инициализация базы данных
 DATABASE_URL = "sqlite:///blog.db"
 engine = create_engine(DATABASE_URL, echo=True)
@@ -27,7 +26,7 @@ def token_required(f):
         if not token:
             return jsonify({"error": "Token is missing."}), 401
         try:
-            jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+            jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM], options={"verify_exp": True})
         except jwt.ExpiredSignatureError:
             return jsonify({"error": "Token has expired."}), 401
         except jwt.InvalidTokenError:
@@ -89,14 +88,17 @@ def login():
     user = session.query(User).filter_by(username=username, password=password).first()
     if not user:
         return jsonify({"error": "Invalid credentials."}), 401
+    
+    token_lifetime = timedelta(hours=1)
+    expiration_time = datetime.now(timezone.utc) + token_lifetime
+
     # Генерация JWT токена с временем жизни
     payload = {
         "user_id": user.id, 
         "username": user.username,
-        "exp": datetime.utcnow() + token_lifetime  # Устанавливаем время жизни токена
+        "exp": expiration_time  # Устанавливаем время жизни токена
     }
-    # Генерация JWT токена
-    payload = {"user_id": user.id, "username": user.username}
+    
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
     # Декодирование токена для преобразования в строку (если нужно)
