@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, abort, session as flask_session
+from flask_cors import CORS, cross_origin
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, DateTime
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
@@ -8,6 +9,9 @@ from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = "zhulikiettttta"  # Для управления сессиями
+cors = CORS(app)
+app.config('CORS_HEADERS') = 'Content-Type'
+
 JWT_SECRET = "blog_platform_mega_super_style_shhhet"
 JWT_ALGORITHM = "HS256"
 
@@ -61,6 +65,7 @@ class Post(Base):
 
 # 1. Создание пользователя
 @app.route('/users', methods=['POST'])
+@cross_origin()
 def create_user():
     data = request.json
     if not data or 'username' not in data or 'password' not in data:
@@ -78,6 +83,7 @@ def create_user():
 
 # 2. Авторизация пользователя
 @app.route('/login', methods=['POST'])
+@cross_origin()
 def login():
     data = request.json
     if not data or 'username' not in data or 'password' not in data:
@@ -108,12 +114,14 @@ def login():
 
 # 3. Выход из аккаунта пользователя
 @app.route('/logout', methods=['POST'])
+@cross_origin()
 def logout():
     flask_session.pop('user_id', None)
     return jsonify({"message": "Logged out successfully."}), 200
 
 # 4. Удаление пользователя
 @app.route('/users/<string:username>', methods=['DELETE'])
+@cross_origin()
 @token_required
 def delete_user(username):
     user = session.query(User).filter_by(username=username).first()
@@ -130,6 +138,7 @@ def delete_user(username):
 
 # 5. Получение всех постов
 @app.route('/posts', methods=['GET'])
+@cross_origin()
 def get_all_posts():
     posts = session.query(Post).all()
     return jsonify([
@@ -158,6 +167,7 @@ def get_single_post(post_id):
 
 # 7. Создание нового поста
 @app.route('/posts', methods=['POST'])
+@cross_origin()
 @token_required
 def create_post():
     data = request.json
@@ -184,6 +194,7 @@ def create_post():
 
 # 8. Изменение поста
 @app.route('/posts/<int:post_id>', methods=['PUT'])
+@cross_origin()
 @token_required
 def update_post(post_id):
     token_data = jwt.decode(request.headers.get('Authorization'), JWT_SECRET, algorithms=[JWT_ALGORITHM])
@@ -208,6 +219,7 @@ def update_post(post_id):
 
 # 9. Удаление поста
 @app.route('/posts/<int:post_id>', methods=['DELETE'])
+@cross_origin()
 @token_required
 def delete_post(post_id):
     # Распаковываем токен
@@ -228,8 +240,9 @@ def delete_post(post_id):
 
     return jsonify({"message": "Post deleted successfully."}), 200
 
-# 7. Валидация токена
+# 10. Валидация токена
 @app.route('/token', methods=['POST'])
+@cross_origin()
 @token_required
 def validation_token():
     token_data = jwt.decode(request.headers.get('Authorization'), JWT_SECRET, algorithms=[JWT_ALGORITHM])
