@@ -250,7 +250,7 @@ def validation_token():
     user = session.query(User).filter_by(id=token_data['user_id']).first()
     if not user:
         return jsonify({"error": "Invalid token."}), 404
-    return jsonify({"message": "Valid token"}), 200
+    return jsonify({"message": "Valid token", "user_id": user.username}), 200
 
 # Запуск приложения
 if __name__ == '__main__':

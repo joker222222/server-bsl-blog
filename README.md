@@ -263,7 +263,8 @@ http://<your_host>:5000
 - **200 OK**
   ```json
   {
-    "message": "Valid token"
+    "message": "Valid token",
+    "user_id": "string"
   }
   ```
 - **404 Not Found**
