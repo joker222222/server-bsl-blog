@@ -20,7 +20,7 @@ http://<your_host>:5000
   "password": "string",
   "first_name": "string",
   "last_name": "string",
-  "avatar": "string"
+  "avatar": "base64.b64encode(img.png.jpg).decode('utf-8')"
 }
 ```
 
@@ -64,7 +64,8 @@ http://<your_host>:5000
   ```json
   {
     "message": "Login successful.",
-    "token": "string"
+    "token": "string",
+    "avatar": "file_path_string.jpg"
   }
   ```
 - **400 Bad Request**
@@ -317,8 +318,27 @@ http://<your_host>:5000
     "username": "string",
     "first_name": "string",
     "last_name": "string",
-    "avatar": "string <img bytecode>",
+    "avatar": "file_path_string.jpg",
     "all_posts": "string"
+  }
+  ```
+- **404 Not Found**
+  ```json
+  {
+    "error": "User not found."
+  }
+  ```
+
+### 13. Получение аватара пользователя
+
+**GET** `/avatars/<path:filename>`
+
+**Ответы:**
+
+- **200 OK**
+  ```json
+  {
+    "img_file"
   }
   ```
 - **404 Not Found**

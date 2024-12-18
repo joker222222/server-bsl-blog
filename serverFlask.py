@@ -1,16 +1,21 @@
 from flask import Flask, request, jsonify, abort, session as flask_session
+from flask import send_file
 from flask_cors import CORS, cross_origin
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, DateTime
+from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, DateTime, LargeBinary
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from datetime import datetime, timedelta, timezone
 import jwt
 from functools import wraps
+import os
+import secrets
+import base64
 
 app = Flask(__name__)
 app.secret_key = "zhulikiettttta"  # Для управления сессиями
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
+app.config['UPLOAD_FOLDER'] = 'img_avatar'
 
 JWT_SECRET = "blog_platform_mega_super_style_shhhet"
 JWT_ALGORITHM = "HS256"
@@ -38,6 +43,15 @@ def token_required(f):
         return f(*args, **kwargs)
     return decorated
 
+# Утилита для создания пути к файлу
+def generate_avatar_path(extension='jpg'):
+    # Генерируем случайную строку для имени файла
+    random_filename = secrets.token_hex(16) + '.' + extension
+    # Указываем путь к папке img_avatar
+    save_path = os.path.join('img_avatar', random_filename)
+    avatar_path = random_filename
+    return save_path, avatar_path
+
 # Определение моделей User и Post
 class User(Base):
     __tablename__ = 'users'
@@ -46,7 +60,7 @@ class User(Base):
     password = Column(String(100), nullable=False)
     first_name = Column(String(50), nullable=False)
     last_name = Column(String(50), nullable=False)
-    avatar = Column(Text, nullable=False)
+    avatar = Column(String(20), nullable=False)
     posts = relationship('Post', back_populates='author', cascade="all, delete-orphan")
 
     def __repr__(self):
@@ -78,16 +92,23 @@ def create_user():
     password = data['password']
     first_name = data['first_name']
     last_name = data['last_name']
-    avatar = data['avatar']
+    binary_data_avatar = base64.b64decode(data['avatar'])
+    save_path, avatar_path = generate_avatar_path()
 
+    def save_binary_file(binary_data, filepath):
+        # Открываем файл для записи в бинарном режиме ('wb')
+        with open(filepath, 'wb') as file:
+            file.write(binary_data)
+
+    save_binary_file(binary_data_avatar, save_path)
 
     if session.query(User).filter_by(username=username).first():
         return jsonify({"error": "User already exists."}), 409
 
-    new_user = User(username=username, password=password, first_name=first_name, last_name=last_name, avatar=avatar)
+    new_user = User(username=username, password=password, first_name=first_name, last_name=last_name, avatar=avatar_path)
     session.add(new_user)
     session.commit()
-    return jsonify({"message": "User created successfully."}), 201  # , "user_id": new_user.id
+    return jsonify({"message": "User created successfully."}), 201 
 
 # 2. Авторизация пользователя
 @app.route('/login', methods=['POST'])
@@ -118,7 +139,7 @@ def login():
     # Декодирование токена для преобразования в строку (если нужно)
     token = token.decode('utf-8') if isinstance(token, bytes) else token
 
-    return jsonify({"message": "Login successful.", "token": token}), 200
+    return jsonify({"message": "Login successful.", "token": token, "avatar": user.avatar}), 200
 
 # 3. Выход из аккаунта пользователя
 @app.route('/logout', methods=['POST'])
@@ -310,7 +331,15 @@ def get_user_info(user_id):
         "avatar": user.avatar,
         "all_posts": all_posts
     }), 200
-    
+
+# 13. Получение Аватара пользователя  
+@app.route('/avatars/<path:filename>', methods=['GET'])
+@cross_origin()
+def get_avatar(filename):
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if not os.path.exists(file_path):
+        return jsonify({"error": "Avatar not found."}), 404
+    return send_file(file_path)
 
 # Запуск приложения
 if __name__ == '__main__':
