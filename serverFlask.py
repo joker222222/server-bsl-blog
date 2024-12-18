@@ -44,6 +44,9 @@ class User(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(50), nullable=False, unique=True)
     password = Column(String(100), nullable=False)
+    first_name = Column(String(50), nullable=False)
+    last_name = Column(String(50), nullable=False)
+    avatar = Column(Text, nullable=False)
     posts = relationship('Post', back_populates='author', cascade="all, delete-orphan")
 
     def __repr__(self):
@@ -65,19 +68,23 @@ class Post(Base):
 # --- API Роуты ---
 
 # 1. Создание пользователя
-@app.route('/users', methods=['POST'])
+@app.route('/signup', methods=['POST'])
 @cross_origin()
 def create_user():
     data = request.json
-    if not data or 'username' not in data or 'password' not in data:
+    if not data or 'username' not in data or 'password' not in data or 'first_name' not in data or 'last_name' not in data or 'avatar' not in data:
         abort(400, description="Username and password are required.")
     username = data['username']
     password = data['password']
+    first_name = data['first_name']
+    last_name = data['last_name']
+    avatar = data['avatar']
+
 
     if session.query(User).filter_by(username=username).first():
         return jsonify({"error": "User already exists."}), 409
 
-    new_user = User(username=username, password=password)
+    new_user = User(username=username, password=password, first_name=first_name, last_name=last_name, avatar=avatar)
     session.add(new_user)
     session.commit()
     return jsonify({"message": "User created successfully."}), 201  # , "user_id": new_user.id
@@ -156,11 +163,13 @@ def get_all_posts():
 
 # 6. Получение одного поста
 @app.route('/posts/<int:post_id>', methods=['GET'])
+@cross_origin()
 def get_single_post(post_id):
     post = session.query(Post).filter_by(id=post_id).first()
     if not post:
         return jsonify({"error": "Post not found."}), 404
     post.views += 1
+    session.commit()
     return jsonify({
         "id": post.id,
         "title": post.title,
@@ -244,7 +253,7 @@ def delete_post(post_id):
     return jsonify({"message": "Post deleted successfully."}), 200
 
 # 10. Валидация токена
-@app.route('/token', methods=['POST'])
+@app.route('/token/check', methods=['POST'])
 @cross_origin()
 @token_required
 def validation_token():
@@ -254,8 +263,8 @@ def validation_token():
         return jsonify({"error": "Invalid token."}), 404
     return jsonify({"message": "Valid token", "user_id": user.username}), 200
 
-# 11. Получение данных о пользователе (все его посты)
-@app.route('/user/<string:user_id>', methods=['GET'])
+# 11. Получение данных о постах пользователя
+@app.route('/author/<string:user_id>/posts', methods=['GET'])
 @cross_origin()
 def get_user_posts(user_id):
 
@@ -266,17 +275,42 @@ def get_user_posts(user_id):
 
     # Получаем все посты пользователя
     posts = session.query(Post).filter_by(user_id=user.id).all()
-
-    # Формируем ответ с постами пользователя
-    return jsonify([
-        {
+    all_views = 0
+    posts = []
+    for post in posts:
+        posts.append({
             "id": post.id,
             "title": post.title,
             "content": post.content,
             "created_at": post.created_at.isoformat(),
             "views": post.views
-        } for post in posts
-    ]), 200
+        })
+        all_views += post.views
+    # Формируем ответ с постами пользователя
+    return jsonify({
+        "all_views": all_views,
+        "posts": posts
+    }), 200
+
+# 12. Получение данных пользователя
+@app.route('/author/<string:user_id>', methods=['GET'])
+@cross_origin()
+def get_user_info(user_id):
+
+    # Проверяем, что запрашиваемый пользователь существует
+    user = session.query(User).filter_by(id=user_id).first()
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+    
+    all_posts = len(session.query(Post).filter_by(user_id=user.id).all())
+    return jsonify({
+        "username": user.username,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "avatar": user.avatar,
+        "all_posts": all_posts
+    }), 200
+    
 
 # Запуск приложения
 if __name__ == '__main__':

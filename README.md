@@ -10,14 +10,17 @@ http://<your_host>:5000
 
 ### 1. Создание пользователя
 
-**POST** `/users`
+**POST** `/signup`
 
 **Тело запроса:**
 
 ```json
 {
   "username": "string",
-  "password": "string"
+  "password": "string",
+  "first_name": "string",
+  "last_name": "string",
+  "avatar": "string"
 }
 ```
 
@@ -256,7 +259,7 @@ http://<your_host>:5000
 
 ### 10. Валидация токена
 
-**POST** `/token`
+**POST** `/token/check`
 
 **Ответы:**
 
@@ -274,23 +277,48 @@ http://<your_host>:5000
   }
   ```
 
-### 11. Получение данных о пользователе (все его посты)
+### 11. Получение данных о постах пользователя
 
-**GET** `/user/<string:user_id>`
+**GET** `/author/<string:user_id>/posts`
 
 **Ответы:**
 
 - **200 OK**
   ```json
   {
-    {
-      "id": "integer",
-      "title": "string",
-      "content": "string",
-      "created_at": "string",
-      "user_id": "string",
-      "views": "integer"
-    }
+    "all_views": "integer",
+    "posts": [
+      {
+        "id": "integer",
+        "title": "string",
+        "content": "string",
+        "created_at": "string",
+        "views": "integer"
+      }
+    ]
+  }
+  ```
+- **404 Not Found**
+  ```json
+  {
+    "error": "User not found."
+  }
+  ```
+
+### 12. Получение данных пользователя
+
+**GET** `/author/<string:user_id>/posts`
+
+**Ответы:**
+
+- **200 OK**
+  ```json
+  {
+    "username": "string",
+    "first_name": "string",
+    "last_name": "string",
+    "avatar": "string <img bytecode>",
+    "all_posts": "string"
   }
   ```
 - **404 Not Found**
