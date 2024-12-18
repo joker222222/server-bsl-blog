@@ -1,242 +1,306 @@
-# 1. Создание пользователя
+# API Documentation for Blog Platform
 
-URL: /users
-Метод: POST
-Описание: Создает нового пользователя.
+## Base URL
 
-Тело запроса (JSON):
-json
+```
+http://<your_host>:5000
+```
+
+## Endpoints
+
+### 1. Создание пользователя
+
+**POST** `/users`
+
+**Тело запроса:**
+
+```json
 {
-"username": "string",
-"password": "string"
+  "username": "string",
+  "password": "string"
 }
+```
 
-Ответы:
-201 Created:
-json
+**Ответы:**
+
+- **201 Created**
+  ```json
+  {
+    "message": "Пользователь успешно создан.",
+    "user_id": "integer"
+  }
+  ```
+- **400 Bad Request**
+  ```json
+  {
+    "error": "Имя пользователя и пароль обязательны."
+  }
+  ```
+- **409 Conflict**
+  ```json
+  {
+    "error": "Пользователь уже существует."
+  }
+  ```
+
+### 2. Вход пользователя
+
+**POST** `/login`
+
+**Тело запроса:**
+
+```json
 {
-"message": "User created successfully.",
-"user_id": "integer"
+  "username": "string",
+  "password": "string"
 }
+```
 
-400 Bad Request:
-Если username или password не переданы:
-json
+**Ответы:**
+
+- **200 OK**
+  ```json
+  {
+    "message": "Вход выполнен успешно.",
+    "token": "string"
+  }
+  ```
+- **400 Bad Request**
+  ```json
+  {
+    "error": "Имя пользователя и пароль обязательны."
+  }
+  ```
+- **401 Unauthorized**
+  ```json
+  {
+    "error": "Неверные учетные данные."
+  }
+  ```
+
+### 3. Выход пользователя
+
+**POST** `/logout`
+
+**Ответы:**
+
+- **200 OK**
+  ```json
+  {
+    "message": "Выход выполнен успешно."
+  }
+  ```
+
+### 4. Удаление пользователя
+
+**DELETE** `/users/{username}`
+
+**Заголовки:**
+
+```
+Authorization: <JWT Token>
+```
+
+**Ответы:**
+
+- **200 OK**
+  ```json
+  {
+    "message": "Пользователь успешно удален."
+  }
+  ```
+- **404 Not Found**
+  ```json
+  {
+    "error": "Пользователь не найден."
+  }
+  ```
+- **403 Forbidden**
+  ```json
+  {
+    "error": "Вы можете удалить только свою учетную запись."
+  }
+  ```
+- **401 Unauthorized**
+  ```json
+  {
+    "error": "Неверный токен."
+  }
+  ```
+
+### 5. Получить все посты
+
+**GET** `/posts`
+
+**Заголовки:**
+
+```
+Authorization: <JWT Token>
+```
+
+**Ответы:**
+
+- **200 OK**
+  ```json
+  [
+    {
+      "id": "integer",
+      "title": "string",
+      "content": "string",
+      "created_at": "ISO 8601 datetime",
+      "user_id": "integer"
+    }
+  ]
+  ```
+
+### 6. Получить один пост
+
+**GET** `/posts/{post_id}`
+
+**Заголовки:**
+
+```
+Authorization: <JWT Token>
+```
+
+**Ответы:**
+
+- **200 OK**
+  ```json
+  {
+    "id": "integer",
+    "title": "string",
+    "content": "string",
+    "created_at": "ISO 8601 datetime",
+    "user_id": "integer"
+  }
+  ```
+- **404 Not Found**
+  ```json
+  {
+    "error": "Пост не найден."
+  }
+  ```
+
+### 7. Создание поста
+
+**POST** `/posts`
+
+**Заголовки:**
+
+```
+Authorization: <JWT Token>
+```
+
+**Тело запроса:**
+
+```json
 {
-"description": "Username and password are required."
+  "title": "string (max: 255 символов)",
+  "content": "string (max: 5000 символов)"
 }
+```
 
-409 Conflict:
-Если пользователь с таким именем уже существует:
-json
+**Ответы:**
+
+- **201 Created**
+  ```json
+  {
+    "message": "Пост успешно создан.",
+    "post_id": "integer",
+    "title": "string",
+    "content": "string",
+    "created_at": "ISO 8601 datetime",
+    "user_id": "integer"
+  }
+  ```
+- **400 Bad Request**
+  ```json
+  {
+    "error": "Заголовок и контент обязательны и должны соответствовать ограничениям по количеству символов."
+  }
+  ```
+
+### 8. Обновление поста
+
+**PUT** `/posts/{post_id}`
+
+**Заголовки:**
+
+```
+Authorization: <JWT Token>
+```
+
+**Тело запроса:**
+
+```json
 {
-"error": "User already exists."
+  "title": "string (необязательно)",
+  "content": "string (необязательно)"
 }
+```
 
-# 2. Авторизация пользователя
+**Ответы:**
 
-URL: /login
-Метод: POST
-Описание: Выполняет вход пользователя в систему.
+- **200 OK**
+  ```json
+  {
+    "message": "Пост успешно обновлен."
+  }
+  ```
+- **404 Not Found**
+  ```json
+  {
+    "error": "Пост не найден."
+  }
+  ```
+- **403 Forbidden**
+  ```json
+  {
+    "error": "Вы можете редактировать только свои посты."
+  }
+  ```
 
-Тело запроса (JSON):
-json
-{
-"username": "example_user",
-"password": "example_password"
-}
+### 9. Удаление поста
 
-Ответы:
-200 OK:
-json
-{
-"message": "Login successful.",
-"token": "string"
-}
+**DELETE** `/posts/{post_id}`
 
-400 Bad Request:
-Если username или password не переданы:
-json
-{
-"description": "Username and password are required."
-}
+**Заголовки:**
 
-401 Unauthorized:
-Если учетные данные неверные:
-json
-{
-"error": "Invalid credentials."
-}
+```
+Authorization: <JWT Token>
+```
 
-# 4. Удаление пользователя
+**Ответы:**
 
-URL: /users/<username>
-Метод: DELETE
-Описание: Удаляет пользователя с указанным именем (можно удалить только свой аккаунт).
+- **200 OK**
+  ```json
+  {
+    "message": "Пост успешно удален."
+  }
+  ```
+- **404 Not Found**
+  ```json
+  {
+    "error": "Пост не найден."
+  }
+  ```
+- **403 Forbidden**
+  ```json
+  {
+    "error": "Вы можете удалять только свои посты."
+  }
+  ```
 
-Параметры URL:
-<username>: Имя пользователя, которого нужно удалить.
-Ответы:
-200 OK:
-json
-{
-"message": "User deleted successfully."
-}
+## Коды ошибок
 
-401 Unauthorized:
-Если пользователь не авторизован:
-json
-{
-"error": "Unauthorized."
-}
+- **400 Bad Request**: Отсутствуют или неверные данные в запросе.
+- **401 Unauthorized**: Токен отсутствует, недействителен или истек.
+- **403 Forbidden**: Пользователь не авторизован для выполнения действия.
+- **404 Not Found**: Ресурс не найден.
+- **409 Conflict**: Ресурс уже существует.
 
-404 Not Found:
-Если пользователь не найден:
-json
-{
-"error": "User not found."
-}
+## Примечания
 
-403 Forbidden:
-Если пользователь пытается удалить чужой аккаунт:
-json
-{
-"error": "You can only delete your own account."
-}
-
-# 5. Получение всех постов
-
-URL: /posts
-Метод: GET
-Описание: Возвращает список всех постов.
-
-Ответы:
-200 OK:
-json
-[
-{
-"id": 1,
-"title": "First Post",
-"content": "This is my first post.",
-"created_at": "2024-12-17T10:00:00Z",
-"user_id": 1
-}
-,
-{
-"id": 2,
-"title": "Second Post",
-"content": "Another post content.",
-"created_at": "2024-12-17T11:00:00Z",
-"user_id": 2
-}
-
-]
-
-# 6. Получение одного поста
-
-URL: /posts/<post_id>
-Метод: GET
-Описание: Возвращает данные поста по его ID.
-
-Параметры URL:
-<post_id>: ID поста.
-Ответы:
-200 OK:
-json
-{
-"id": 1,
-"title": "First Post",
-"content": "This is my first post.",
-"created_at": "2024-12-17T10:00:00Z",
-"user_id": 1
-}
-
-404 Not Found:
-Если пост с указанным ID не найден:
-json
-{
-"error": "Post not found."
-}
-
-# 7. Создание нового поста
-
-URL: /posts
-Метод: POST
-Описание: Создает новый пост, связанный с пользователем. Для создания поста необходимо передать данные о пользователе и посте.
-
-Тело запроса (JSON):
-json
-{
-"title": "My New Post",
-"content": "This is the content of my new post.",
-"username": "example_user"
-}
-
-Ответы:
-201 Created: Если пост успешно создан:
-json
-{
-"message": "Post created successfully.",
-"post_id": 1,
-"title": "My New Post",
-"content": "This is the content of my new post.",
-"created_at": "2024-12-17T12:00:00Z",
-"user_id": 1
-}
-
-400 Bad Request:
-Если не переданы обязательные поля title, content или username:
-json
-{
-"description": "Title, content, and username are required."
-}
-
-404 Not Found:
-Если пользователь с указанным именем не найден:
-json
-{
-"error": "User not found."
-}
-
-# 8. Изменение поста
-
-URL: /posts/<post_id>
-Метод: PUT
-Описание: Изменяет данные существующего поста (можно редактировать только свои посты).
-
-Параметры URL:
-<post_id>: ID поста.
-Тело запроса (JSON):
-json
-{
-"title": "Updated Title",
-"content": "Updated content of the post."
-}
-
-Ответы:
-200 OK:
-json
-{
-"message": "Post updated successfully."
-}
-
-401 Unauthorized:
-Если пользователь не авторизован:
-json
-{
-"error": "Unauthorized."
-}
-
-404 Not Found:
-Если пост с указанным ID не найден:
-json
-{
-"error": "Post not found."
-}
-
-403 Forbidden:
-Если пользователь пытается редактировать чужой пост:
-json
-{
-"error": "You can only edit your own posts."
-}
+- Все эндпоинты, требующие аутентификации, должны содержать заголовок `Authorization` с действительным токеном JWT.
+- Даты возвращаются в формате ISO 8601 (`YYYY-MM-DDTHH:MM:SSZ`).
