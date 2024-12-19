@@ -45,12 +45,15 @@ def token_required(f):
 
 # Утилита для создания пути к файлу
 def generate_avatar_path(extension='jpg'):
-    # Генерируем случайную строку для имени файла
+    # Генерируем случайное имя для файла
     random_filename = secrets.token_hex(16) + '.' + extension
-    
-    # Указываем путь к папке img_avatar
-    save_path = os.path.join(app.config['UPLOAD_FOLDER'], random_filename)
-    avatar_path = random_filename
+
+    # Создаём абсолютный путь для сохранения файла
+    folder_path = os.path.abspath(app.config['UPLOAD_FOLDER'])
+    os.makedirs(folder_path, exist_ok=True)  # Создаём папку, если её нет
+
+    save_path = os.path.join(folder_path, random_filename)  # Полный путь для сохранения файла
+    avatar_path = random_filename  # Путь, который будет сохранён в БД
     return save_path, avatar_path
 
 # Определение моделей User и Post
@@ -96,23 +99,28 @@ def create_user():
 
     try:
         binary_data_avatar = request.files['avatar'].read()
+        if not request.files['avatar'].filename.endswith(('jpg', 'jpeg', 'png')):
+            abort(400, description="Invalid file type. Only JPG and PNG are allowed.")
         save_path, avatar_path = generate_avatar_path()
 
-        def save_binary_file(binary_data, filepath):
-            # Открываем файл для записи в бинарном режиме ('wb')
-            with open(filepath, 'wb') as file:
-                file.write(binary_data)
-        save_binary_file(binary_data_avatar, save_path)
+        with open(save_path, 'wb') as file:
+            file.write(binary_data_avatar)
+
+        if session.query(User).filter_by(username=username).first():
+            return jsonify({"error": "User already exists."}), 409
+
+        new_user = User(username=username, password=password, first_name=first_name, last_name=last_name, avatar=avatar_path)
+        session.add(new_user)
+        session.commit()
+        return jsonify({"message": "User created successfully."}), 201 
     except:
-        pass
+        if session.query(User).filter_by(username=username).first():
+            return jsonify({"error": "User already exists."}), 409
 
-    if session.query(User).filter_by(username=username).first():
-        return jsonify({"error": "User already exists."}), 409
-
-    new_user = User(username=username, password=password, first_name=first_name, last_name=last_name, avatar=avatar_path)
-    session.add(new_user)
-    session.commit()
-    return jsonify({"message": "User created successfully."}), 201 
+        new_user = User(username=username, password=password, first_name=first_name, last_name=last_name)
+        session.add(new_user)
+        session.commit()
+        return jsonify({"message": "User created successfully."}), 201 
 
 # 2. Авторизация пользователя
 @app.route('/login', methods=['POST'])
