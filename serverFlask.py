@@ -47,10 +47,9 @@ def token_required(f):
 def generate_avatar_path(extension='jpg'):
     # Генерируем случайную строку для имени файла
     random_filename = secrets.token_hex(16) + '.' + extension
-    folder_path = 'img_avatar'
-    os.makedirs(folder_path, exist_ok=True)
+    
     # Указываем путь к папке img_avatar
-    save_path = os.path.join('img_avatar', random_filename)
+    save_path = os.path.join(app.config['UPLOAD_FOLDER'], random_filename)
     avatar_path = random_filename
     return save_path, avatar_path
 
@@ -341,7 +340,7 @@ def get_user_info(user_id):
 @app.route('/avatars/<path:filename>', methods=['GET'])
 @cross_origin()
 def get_avatar(filename):
-    file_path = os.path.join('img_avatar', filename)  # app.config['UPLOAD_FOLDER']
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     if not os.path.exists(file_path):
         return jsonify({"error": "Avatar not found."}), 404
     return send_file(file_path)
