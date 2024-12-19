@@ -341,8 +341,8 @@ def get_user_info(user_id):
 @app.route('/avatars/<path:filename>', methods=['GET'])
 @cross_origin()
 def get_avatar(filename):
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    if not os.path.exists(file_path):
+    file_path = os.path.join('img', filename)   //app.config['UPLOAD_FOLDER']
+    if not os.path.exists('img_avatar', file_path):
         return jsonify({"error": "Avatar not found."}), 404
     return send_file(file_path)
 
