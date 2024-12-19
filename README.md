@@ -20,7 +20,7 @@ http://<your_host>:5000
   "password": "string",
   "first_name": "string",
   "last_name": "string",
-  "avatar": "base64.b64encode(img.png.jpg).decode('utf-8')"
+  "avatar": "file.png.jpg"
 }
 ```
 

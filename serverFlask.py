@@ -85,14 +85,15 @@ class Post(Base):
 @app.route('/signup', methods=['POST'])
 @cross_origin()
 def create_user():
-    data = request.json
-    if not data or 'username' not in data or 'password' not in data or 'first_name' not in data or 'last_name' not in data or 'avatar' not in data:
+    if 'username' not in request.form or 'password' not in request.form or \
+       'first_name' not in request.form or 'last_name' not in request.form:
         abort(400, description="Username and password are required.")
-    username = data['username']
-    password = data['password']
-    first_name = data['first_name']
-    last_name = data['last_name']
-    binary_data_avatar = base64.b64decode(data['avatar'])
+    username = request.form['username']
+    password = request.form['password']
+    first_name = request.form['first_name']
+    last_name = request.form['last_name']
+
+    binary_data_avatar = request.files['avatar'].read()
     save_path, avatar_path = generate_avatar_path()
 
     def save_binary_file(binary_data, filepath):
