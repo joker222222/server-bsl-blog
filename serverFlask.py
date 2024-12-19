@@ -92,11 +92,12 @@ def create_user():
     if 'username' not in request.form or 'password' not in request.form or \
        'first_name' not in request.form or 'last_name' not in request.form:
         abort(400, description="Username and password are required.")
+    
+    username = request.form['username']
 
     if session.query(User).filter_by(username=username).first():
         return jsonify({"error": "User already exists."}), 409
-    
-    username = request.form['username']
+
     password = request.form['password']
     first_name = request.form['first_name']
     last_name = request.form['last_name']
@@ -110,7 +111,7 @@ def create_user():
         with open(save_path, 'wb') as file:
             file.write(binary_data_avatar)
     except:
-        avatar_path = '1.jpg'
+        avatar_path = 'empty.jpg'
         
     new_user = User(username=username, password=password, first_name=first_name, last_name=last_name, avatar=avatar_path)
     session.add(new_user)
