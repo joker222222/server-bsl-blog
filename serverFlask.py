@@ -47,6 +47,8 @@ def token_required(f):
 def generate_avatar_path(extension='jpg'):
     # Генерируем случайную строку для имени файла
     random_filename = secrets.token_hex(16) + '.' + extension
+    folder_path = 'img_avatar'
+    os.makedirs(folder_path, exist_ok=True)
     # Указываем путь к папке img_avatar
     save_path = os.path.join('img_avatar', random_filename)
     avatar_path = random_filename
@@ -93,15 +95,17 @@ def create_user():
     first_name = request.form['first_name']
     last_name = request.form['last_name']
 
-    binary_data_avatar = request.files['avatar'].read()
-    save_path, avatar_path = generate_avatar_path()
+    try:
+        binary_data_avatar = request.files['avatar'].read()
+        save_path, avatar_path = generate_avatar_path()
 
-    def save_binary_file(binary_data, filepath):
-        # Открываем файл для записи в бинарном режиме ('wb')
-        with open(filepath, 'wb') as file:
-            file.write(binary_data)
-
-    save_binary_file(binary_data_avatar, save_path)
+        def save_binary_file(binary_data, filepath):
+            # Открываем файл для записи в бинарном режиме ('wb')
+            with open(filepath, 'wb') as file:
+                file.write(binary_data)
+        save_binary_file(binary_data_avatar, save_path)
+    except:
+        pass
 
     if session.query(User).filter_by(username=username).first():
         return jsonify({"error": "User already exists."}), 409
