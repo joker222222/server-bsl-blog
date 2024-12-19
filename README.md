@@ -268,7 +268,8 @@ http://<your_host>:5000
   ```json
   {
     "message": "Valid token",
-    "user_id": "string"
+    "user_id": "string",
+    "avatar": "file_path_string.jpg"
   }
   ```
 - **404 Not Found**
@@ -345,6 +346,43 @@ http://<your_host>:5000
   ```json
   {
     "error": "User not found."
+  }
+  ```
+
+### 14. Изменение Аватара пользователя
+
+**PUT** `/avatars`
+
+**Тело запроса:**
+
+```json
+{
+  "avatar": "file.png.jpg"
+}
+```
+
+**Ответы:**
+
+- **201 OK**
+
+  ```json
+  {
+    "message": "Avatar updated successfully."
+  }
+  ```
+
+  **404 Not Found**
+
+  ```json
+  {
+    "error": "User not found."
+  }
+  ```
+
+- **405 Not Found**
+  ```json
+  {
+    "error": "Failed to update avatar."
   }
   ```
 

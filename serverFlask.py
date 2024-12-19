@@ -292,7 +292,7 @@ def validation_token():
     user = session.query(User).filter_by(id=token_data['user_id']).first()
     if not user:
         return jsonify({"error": "Invalid token."}), 404
-    return jsonify({"message": "Valid token", "user_id": user.username}), 200
+    return jsonify({"message": "Valid token", "user_id": user.username, "avatar": user.avatar}), 200
 
 # 11. Получение данных о постах пользователя
 @app.route('/author/<string:user_id>/posts', methods=['GET'])
@@ -350,6 +350,32 @@ def get_avatar(filename):
     if not os.path.exists(file_path):
         return jsonify({"error": "Avatar not found."}), 404
     return send_file(file_path)
+
+# 14. Изменение Аватара пользователя
+@app.route('/avatars', methods=['PUT'])
+@cross_origin()
+@token_required
+def change_avatar():
+    # Декодирование JWT токена и извлечение user_id
+    token_data = jwt.decode(request.headers.get('Authorization'), JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    user = session.query(User).filter_by(id=token_data['user_id']).first()
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+    try:
+        binary_data_avatar = request.files['avatar'].read()
+        if not request.files['avatar'].filename.endswith(('jpg', 'jpeg', 'png')):
+            abort(400, description="Invalid file type. Only JPG and PNG are allowed.")
+        save_path, avatar_path = generate_avatar_path()
+        with open(save_path, 'wb') as file:
+            file.write(binary_data_avatar)
+        user.avatar = avatar_path
+        session.commit()
+        return jsonify({"message": "Avatar updated successfully."}), 201
+    except Exception as e:
+        print(f"Ошибка при создании аватара: {e}")
+        user.avatar = 'empty.jpg'
+        session.commit()
+        return jsonify({"error": "Failed to update avatar."}), 405
 
 # Запуск приложения
 if __name__ == '__main__':
