@@ -15,7 +15,7 @@ app = Flask(__name__)
 app.secret_key = "zhulikiettttta"  # Для управления сессиями
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
-app.config['UPLOAD_FOLDER'] = 'img_avatar'
+app.config['UPLOAD_FOLDER'] = '/home/user1/img_avatar'
 
 JWT_SECRET = "blog_platform_mega_super_style_shhhet"
 JWT_ALGORITHM = "HS256"
@@ -64,7 +64,7 @@ class User(Base):
     password = Column(String(100), nullable=False)
     first_name = Column(String(50), nullable=False)
     last_name = Column(String(50), nullable=False)
-    avatar = Column(String(20), nullable=False)
+    avatar = Column(String(20), nullable=True)
     posts = relationship('Post', back_populates='author', cascade="all, delete-orphan")
 
     def __repr__(self):
@@ -92,6 +92,10 @@ def create_user():
     if 'username' not in request.form or 'password' not in request.form or \
        'first_name' not in request.form or 'last_name' not in request.form:
         abort(400, description="Username and password are required.")
+
+    if session.query(User).filter_by(username=username).first():
+        return jsonify({"error": "User already exists."}), 409
+    
     username = request.form['username']
     password = request.form['password']
     first_name = request.form['first_name']
@@ -105,22 +109,13 @@ def create_user():
 
         with open(save_path, 'wb') as file:
             file.write(binary_data_avatar)
-
-        if session.query(User).filter_by(username=username).first():
-            return jsonify({"error": "User already exists."}), 409
-
-        new_user = User(username=username, password=password, first_name=first_name, last_name=last_name, avatar=avatar_path)
-        session.add(new_user)
-        session.commit()
-        return jsonify({"message": "User created successfully."}), 201 
     except:
-        if session.query(User).filter_by(username=username).first():
-            return jsonify({"error": "User already exists."}), 409
-
-        new_user = User(username=username, password=password, first_name=first_name, last_name=last_name)
-        session.add(new_user)
-        session.commit()
-        return jsonify({"message": "User created successfully."}), 201 
+        avatar_path = '1.jpg'
+        
+    new_user = User(username=username, password=password, first_name=first_name, last_name=last_name, avatar=avatar_path)
+    session.add(new_user)
+    session.commit()
+    return jsonify({"message": "User created successfully."}), 201 
 
 # 2. Авторизация пользователя
 @app.route('/login', methods=['POST'])
