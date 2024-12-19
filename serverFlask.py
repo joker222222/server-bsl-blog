@@ -110,8 +110,9 @@ def create_user():
 
         with open(save_path, 'wb') as file:
             file.write(binary_data_avatar)
-    except:
-        print('Не удалось создать картинку')
+    except Exception as e:
+        # Логируем ошибку
+        print(f"Ошибка при создании аватара: {e}")
         avatar_path = 'empty.jpg'
         
     new_user = User(username=username, password=password, first_name=first_name, last_name=last_name, avatar=avatar_path)
